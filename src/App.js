@@ -29,19 +29,22 @@ const randomArray = (length, max) =>
 
 getData()
   .then((data) => {
-    console.log("resolved", data);
+    //console.log("resolved", data);
     var solarDATA = data.bodies;
     // orbitalConversion(solar_data[0]);
 
     for (let i = 0; i < solarDATA.length; i++) {
       if (solarDATA[i].isPlanet === true) {
-        planets.push(solarDATA[i]);
+        var temp = orbitalConversion(solarDATA[i]);
+        let comp = {
+          x: temp[0],
+          y: temp[1],
+          z: temp[2]
+        }
+        planets = {...solarDATA[i], ...comp}
       }
     }
     console.log(planets[8]);
-    let temp = {};
-    temp = orbitalConversion(planets[8]);
-    console.log(temp);
   })
   .catch((err) => {
     console.log("rejected", err);
