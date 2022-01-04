@@ -14,6 +14,9 @@ export default function App() {
   // *********************************
 }
 
+/**
+ * 
+ */
 const getData = async () => {
   // async function, always returns promise
   const response = await fetch(solarAPI);
@@ -56,6 +59,9 @@ getData()
     console.log("rejected", err);
   });
 
+/**
+ * 
+ */
 function plotSystem() {
   var plot = document.getElementById("system_chart");
 
@@ -75,26 +81,6 @@ function plotSystem() {
     type: "scatter3d"
   };
 
-  /*
-  var trace2 = {
-    x: randomArray(testObjects, testRange),
-    y: randomArray(testObjects, testRange),
-    z: randomArray(testObjects, testRange),
-    mode: "markers",
-    marker: {
-      color: "rgb(127, 127, 127)",
-      size: 12,
-      symbol: "circle",
-      line: {
-        color: "rgb(204, 204, 204)",
-        width: 1
-      },
-      opacity: 0.8
-    },
-    type: "scatter3d"
-  };
-  */
-
   var data = [trace1];
   var layout = {
     margin: {
@@ -108,21 +94,11 @@ function plotSystem() {
   Plotly.newPlot(plot, data, layout);
 }
 
-/* fetch(solar_api)
-  .then((response) => {
-    // resolve
-    console.log("resolved", response);
-    return response.json(); // parses response data -> returns promise
-  })
-  .then((data) => {
-    console.log(data);
-  })
-  .catch((err) => {
-    // reject
-    // only rejected when offline/network error
-    console.log("rejected", err);
-  }); */
-
+/**
+ * 
+ * @param {*} orbitalElements 
+ * @returns 
+ */
 function orbitalConversion(orbitalElements) {
   /*
   Takes in Kepler orbital elements and calculates cartesian.
@@ -190,8 +166,6 @@ function orbitalConversion(orbitalElements) {
   kep.E = calculateEccentricAnomaly(kep.M, kep.e);
   [kep.V, kep.r] = calculateTrueAnomaly(kep.E, kep.e, kep.a);
 
-  //console.log(kep);
-
   let xh =
     kep.r *
     (Math.cos(kep.N) * Math.cos(kep.V + kep.w) -
@@ -245,4 +219,23 @@ function calculateEccentricAnomaly(M, e) {
   } else {
     throw new Error("Unexpected orbital eccentricity");
   }
+}
+
+/**
+ * 
+ * @param {*} orbitalElements []
+ * @param {*} orbitalResolution []
+ * @param {*} degreeOfOrbit []
+ * @returns {*} orbitalPoints []
+ */
+function calcFullOrbit(orbitalElements, orbitalResolution = 0, degreeOfOrbit = 360) {
+/**
+ * Uses orbital elements to calculate set of positions by varying calculation of true anomaly.
+ * Number of positions is determined by orbitalResolution, the arc of the orbit is determined by
+ * degreeOfOrbit.
+ * By default calculates full orbit using orbital period to determine the number or orbital points.
+ * Returns these positions which can be used to plot full orbit or a portion of it.
+ */
+
+  return orbitalPoints
 }
