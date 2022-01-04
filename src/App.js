@@ -6,6 +6,7 @@ const solarAPI = "https://api.le-systeme-solaire.net/rest/bodies/";
 var planets = [];
 var testObjects = 100;
 var testRange = 2;
+var objectCoords;
 
 export default function App() {
   console.log("======");
@@ -44,59 +45,68 @@ getData()
         planets = {...solarDATA[i], ...comp}
       }
     }
-    console.log(planets[8]);
+    objectCoords = {
+    x : planets.map(item => item['x']),
+    y : planets.map(item => item['y']),
+    z : planets.map(item => item['z'])
+    }
+    plotSystem();
   })
   .catch((err) => {
     console.log("rejected", err);
   });
 
-var plot = document.getElementById("system_chart");
+function plotSystem() {
+  var plot = document.getElementById("system_chart");
 
-var trace1 = {
-  x: randomArray(testObjects, testRange),
-  y: randomArray(testObjects, testRange),
-  z: randomArray(testObjects, testRange),
-  mode: "markers",
-  marker: {
-    size: 12,
-    line: {
-      color: "rgba(217, 217, 217, 0.14)",
-      width: 0.5
+  var trace1 = {
+    x: objectCoords.x,
+    y: objectCoords.y,
+    z: objectCoords.z,
+    mode: "markers",
+    marker: {
+      size: 12,
+      line: {
+        color: "rgba(217, 217, 217, 0.14)",
+        width: 0.5
+      },
+      opacity: 0.8
     },
-    opacity: 0.8
-  },
-  type: "scatter3d"
-};
+    type: "scatter3d"
+  };
 
-var trace2 = {
-  x: randomArray(testObjects, testRange),
-  y: randomArray(testObjects, testRange),
-  z: randomArray(testObjects, testRange),
-  mode: "markers",
-  marker: {
-    color: "rgb(127, 127, 127)",
-    size: 12,
-    symbol: "circle",
-    line: {
-      color: "rgb(204, 204, 204)",
-      width: 1
+  /*
+  var trace2 = {
+    x: randomArray(testObjects, testRange),
+    y: randomArray(testObjects, testRange),
+    z: randomArray(testObjects, testRange),
+    mode: "markers",
+    marker: {
+      color: "rgb(127, 127, 127)",
+      size: 12,
+      symbol: "circle",
+      line: {
+        color: "rgb(204, 204, 204)",
+        width: 1
+      },
+      opacity: 0.8
     },
-    opacity: 0.8
-  },
-  type: "scatter3d"
-};
+    type: "scatter3d"
+  };
+  */
 
-var data = [trace1, trace2];
-var layout = {
-  margin: {
-    l: 0,
-    r: 0,
-    b: 0,
-    t: 0
-  }
-};
+  var data = [trace1];
+  var layout = {
+    margin: {
+      l: 0,
+      r: 0,
+      b: 0,
+      t: 0
+    }
+  };
 
-Plotly.newPlot(plot, data, layout);
+  Plotly.newPlot(plot, data, layout);
+}
 
 /* fetch(solar_api)
   .then((response) => {
