@@ -4,8 +4,6 @@ import "./index.css";
 const solarAPI = "https://api.le-systeme-solaire.net/rest/bodies/";
 
 var planets = [];
-var testObjects = 100;
-var testRange = 2;
 var objectCoords;
 
 export default function App() {
@@ -26,11 +24,6 @@ const getData = async () => {
   return data;
 };
 
-const randomArray = (length, max) =>
-  Array(length)
-    .fill()
-    .map(() => Math.random() * max);
-
 getData()
   .then((data) => {
     //console.log("resolved", data);
@@ -45,7 +38,7 @@ getData()
           y: temp[1],
           z: temp[2]
         }
-        planets = {...solarDATA[i], ...comp}
+        planets[planets.length] = {...solarDATA[i], ...comp}
       }
     }
     objectCoords = {
@@ -71,7 +64,7 @@ function plotSystem() {
     z: objectCoords.z,
     mode: "markers",
     marker: {
-      size: 12,
+      size: 3,
       line: {
         color: "rgba(217, 217, 217, 0.14)",
         width: 0.5
@@ -226,9 +219,9 @@ function calculateEccentricAnomaly(M, e) {
  * @param {*} orbitalElements []
  * @param {*} orbitalResolution []
  * @param {*} degreeOfOrbit []
- * @returns {*} orbitalPoints []
+ * @returns {*} processionPoints []
  */
-function calcFullOrbit(orbitalElements, orbitalResolution = 0, degreeOfOrbit = 360) {
+function calculateProcession(orbitalElements, orbitalResolution = 0, degreeOfOrbit = 360) {
 /**
  * Uses orbital elements to calculate set of positions by varying calculation of true anomaly.
  * Number of positions is determined by orbitalResolution, the arc of the orbit is determined by
@@ -236,6 +229,9 @@ function calcFullOrbit(orbitalElements, orbitalResolution = 0, degreeOfOrbit = 3
  * By default calculates full orbit using orbital period to determine the number or orbital points.
  * Returns these positions which can be used to plot full orbit or a portion of it.
  */
+  var processionPoints = [];
 
-  return orbitalPoints
+  // create list of points using simplified calculation using eccentric anom only to confirm orbit
+
+  return processionPoints
 }
