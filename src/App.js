@@ -33,20 +33,33 @@ getData()
     for (let i = 0; i < solarDATA.length; i++) {
       if (solarDATA[i].isPlanet === true) {
         var temp = orbitalConversion(solarDATA[i]);
-        let comp = {
-          x: temp[0],
-          y: temp[1],
-          z: temp[2]
+        let plotParams = {
+          x: [temp[0]],
+          y: [temp[1]],
+          z: [temp[2]],
+          mode: "markers",
+          marker: {
+            size: Math.max(Math.min(solarDATA[i].meanRadius,1000), 10),
+            line: {
+              color: "rgba(200, 200, 200, 0.14)",
+              width: 0.5
+            },
+            opacity: 0.8
+          },
+          type: "scatter3d"
+          }
         }
-        planets[planets.length] = {...solarDATA[i], ...comp}
+        // Merge plotting paramaters used by plotly into the celestial object
+        planets[planets.length] = {...solarDATA[i], ...plotParams}
       }
-    }
+    /*
     objectCoords = {
     x : planets.map(item => item['x']),
     y : planets.map(item => item['y']),
     z : planets.map(item => item['z'])
     }
-    plotSystem();
+    */
+    plotSystem(planets);
   })
   .catch((err) => {
     console.log("rejected", err);
@@ -55,9 +68,10 @@ getData()
 /**
  * 
  */
-function plotSystem() {
+function plotSystem(plotData) {
   var plot = document.getElementById("system_chart");
 
+  /*
   var trace1 = {
     x: objectCoords.x,
     y: objectCoords.y,
@@ -73,8 +87,9 @@ function plotSystem() {
     },
     type: "scatter3d"
   };
+  */
 
-  var data = [trace1];
+  var data = plotData;
   var layout = {
     margin: {
       l: 0,
