@@ -55,15 +55,7 @@ function init() {
     camera.position.x = 2;
     controls.update();
 
-    const box = new THREE.BoxGeometry(1, 1, 1);
-    const box_material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(box, box_material);
-    scene.add(cube);
-
-    const geometry = new THREE.SphereGeometry(2, 50, 50);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const sphere = new THREE.Mesh(geometry, material); scene.add(sphere);
-    sphere.position.x = 2;
+    generateRandomSpheres();
 
     stats = new Stats();
     container.appendChild(stats.dom);
@@ -78,6 +70,25 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+function generateRandomSpheres() {
+    for (let i = 0; i < 10; i++) {
+        const geometry = new THREE.SphereGeometry(Math.random()*5, 50, 50);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const sphere = new THREE.Mesh(geometry, material);
+        scene.add(sphere);
+
+        // offset spere
+        let offest_maximum = 20
+        sphere.position.x = getRandomArbitrary(-offest_maximum, offest_maximum);
+        sphere.position.y = getRandomArbitrary(-offest_maximum, offest_maximum);
+        sphere.position.z = getRandomArbitrary(-offest_maximum, offest_maximum);
+    }
+}
+
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+  }  
+
 function animate() {
     requestAnimationFrame(animate);
 
@@ -87,4 +98,21 @@ function animate() {
 
 function render() {
     renderer.render(scene, camera);
+}
+
+class CelestialBody {
+    constructor(name, radius) {
+
+    }
+}
+
+class Orbit {
+    constructor(N, i, w, a, e, M) {
+        this.N = N; // longitude of the ascending node
+        this.i = i; // inclination to the ecliptic plane
+        this.w = w; // argument of perihelion
+        this.a = a; // semi-major axis, or mean distance from orbiting body
+        this.e = e; // eccentricity (0=circle, 0-1=ellipse, 1=parabola)
+        this.M = M; // 0 at perihelion
+    }
 }
