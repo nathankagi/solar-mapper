@@ -17,7 +17,7 @@ const bloomLayer = new THREE.Layers();
 bloomLayer.set(BLOOM_SCENE);
 const bloomParams = {
     threshold: 0,
-    strength: 1,
+    strength: 2.5,
     radius: 0,
     exposure: 0
 };
@@ -57,18 +57,13 @@ container.innerHTML = "";
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
-camera.position.set(5, 5, 5);
+camera.position.set(50, 50, 50);
 camera.lookAt(0, 0, 0);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
-directionalLight.position.set(1, 1000, 1);
-scene.add(directionalLight);
-
 const lightFolder = gui.addFolder('light');
-lightFolder.add(directionalLight, 'intensity').min(0).max(200).step(0.01);
 
 const canvas = document.getElementsByTagName("canvas")[0];
 
@@ -142,19 +137,24 @@ function createSun() {
     sphere.position.set(0, 0, 0);
     sphere.layers.enable(BLOOM_SCENE);
 
+    const pointLight = new THREE.PointLight(0xffffff, 15, 0, 0.01);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+    lightFolder.add(pointLight, 'intensity').min(0).max(20000).step(0.01);
+
     scene.add(sphere);
 }
 
 function generateRandomSpheres() {
     for (let i = 0; i < 10; i++) {
-        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 1), 100, 100);
+        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
         const material = new THREE.MeshStandardMaterial({ color: 0x000fff });
         const sphere = new THREE.Mesh(geometry, material);
         sphere.receiveShadow = true;
         sphere.castShadow = true;
         scene.add(sphere);
 
-        let offest_maximum = 5
+        let offest_maximum = 50
         sphere.position.x = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.y = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.z = getRandomRange(-offest_maximum, offest_maximum);
