@@ -111,7 +111,7 @@ finalComposer.addPass(renderScene);
 finalComposer.addPass(mixPass);
 finalComposer.addPass(outputPass);
 
-generateRandomSpheres();
+const spheres = generateRandomSpheres();
 createSun();
 
 window.addEventListener("resize", function () {
@@ -140,13 +140,16 @@ function createSun() {
     const pointLight = new THREE.PointLight(0xffffff, 15, 0, 0.01);
     pointLight.position.set(0, 0, 0);
     scene.add(pointLight);
-    lightFolder.add(pointLight, 'intensity').min(0).max(20000).step(0.01);
+    lightFolder.add(pointLight, 'intensity').min(5).max(100).step(0.01);
 
     scene.add(sphere);
 }
 
 function generateRandomSpheres() {
+    const spheres = [];
     for (let i = 0; i < 10; i++) {
+        const sphereGroup = new THREE.Group();
+        const pivotPoint = new THREE.Object3D();
         const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
         const material = new THREE.MeshStandardMaterial({ color: 0x000fff });
         const sphere = new THREE.Mesh(geometry, material);
@@ -154,12 +157,23 @@ function generateRandomSpheres() {
         sphere.castShadow = true;
         scene.add(sphere);
 
-        let offest_maximum = 50
+        let offest_maximum = 80
         sphere.position.x = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.y = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.z = getRandomRange(-offest_maximum, offest_maximum);
         sphere.layers.disable(BLOOM_SCENE);
+
+        pivotPoint.position.set(0, 0, 0);
+        spheres.push(
+            {
+                'group': sphereGroup.add(pivotPoint),
+                'item': pivotPoint.add(sphere),
+            }
+        )
+        scene.add(sphereGroup);
     }
+
+    return spheres;
 }
 
 function getRandomRange(min, max) {
@@ -168,8 +182,21 @@ function getRandomRange(min, max) {
 
 function animate() {
     requestAnimationFrame(animate);
+    rotateObjects(spheres);
 
     render();
+}
+
+function rotateObjects(objects) {
+    const rotationSpeed = 0.01;
+    const distanceCoefficient = 50;
+    const referncePosition = new THREE.Vector3(0, 0, 0);
+    objects.forEach(element => {
+        const distance = element.item.children[0].position.distanceTo(referncePosition);
+        const rate = rotationSpeed * Math.exp(-distance / distanceCoefficient);
+        console.log(rate);
+        element.group.rotation.y += rate;
+    });
 }
 
 function render() {
