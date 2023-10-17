@@ -1,6 +1,8 @@
 import "./index.css";
 import * as THREE from "three";
 
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
@@ -8,17 +10,42 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
+const gui = new GUI();
+
 const BLOOM_SCENE = 1;
 const bloomLayer = new THREE.Layers();
 bloomLayer.set(BLOOM_SCENE);
 const bloomParams = {
     threshold: 0,
     strength: 1,
-    radius: 1,
+    radius: 0,
     exposure: 0
 };
 
-const darkMaterial = new THREE.MeshBasicMaterial({ color: 'black' });
+const bloomFolder = gui.addFolder('bloom');
+
+bloomFolder.add(bloomParams, 'threshold', 0.0, 1.0).onChange(function (value) {
+
+    bloomPass.threshold = Number(value);
+    render();
+
+});
+
+bloomFolder.add(bloomParams, 'strength', 0.0, 3).onChange(function (value) {
+
+    bloomPass.strength = Number(value);
+    render();
+
+});
+
+bloomFolder.add(bloomParams, 'radius', 0.0, 1.0).step(0.01).onChange(function (value) {
+
+    bloomPass.radius = Number(value);
+    render();
+
+});
+
+const darkMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
 const materials = {};
 
 let fov = 70;
@@ -28,26 +55,34 @@ const container = document.getElementById("container");
 container.innerHTML = "";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
 
 const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
-camera.position.set(50, 50, 50);
+camera.position.set(5, 5, 5);
 camera.lookAt(0, 0, 0);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
+directionalLight.position.set(1, 1000, 1);
+scene.add(directionalLight);
+
+const lightFolder = gui.addFolder('light');
+lightFolder.add(directionalLight, 'intensity').min(0).max(200).step(0.01);
 
 const canvas = document.getElementsByTagName("canvas")[0];
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000, 0.0);
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
 controls.maxPolarAngle = Math.PI;
-controls.addEventListener('change', render);
 controls.update();
+controls.addEventListener('change', render);
 
 const renderScene = new RenderPass(scene, camera);
 
@@ -82,7 +117,7 @@ finalComposer.addPass(mixPass);
 finalComposer.addPass(outputPass);
 
 generateRandomSpheres();
-scene.add(createSun());
+createSun();
 
 window.addEventListener("resize", function () {
     const width = window.innerWidth;
@@ -100,21 +135,26 @@ animate();
 
 function createSun() {
     const geometry = new THREE.SphereGeometry(1, 100, 100);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const material = new THREE.MeshStandardMaterial({ color: 0xffff00 });
     const sphere = new THREE.Mesh(geometry, material);
+    sphere.receiveShadow = true;
+    sphere.castShadow = true;
     sphere.position.set(0, 0, 0);
     sphere.layers.enable(BLOOM_SCENE);
-    return sphere
+
+    scene.add(sphere);
 }
 
 function generateRandomSpheres() {
     for (let i = 0; i < 10; i++) {
-        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
-        const material = new THREE.MeshBasicMaterial({ color: 0x000fff });
+        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 1), 100, 100);
+        const material = new THREE.MeshStandardMaterial({ color: 0x000fff });
         const sphere = new THREE.Mesh(geometry, material);
+        sphere.receiveShadow = true;
+        sphere.castShadow = true;
         scene.add(sphere);
 
-        let offest_maximum = 50
+        let offest_maximum = 5
         sphere.position.x = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.y = getRandomRange(-offest_maximum, offest_maximum);
         sphere.position.z = getRandomRange(-offest_maximum, offest_maximum);
@@ -133,13 +173,14 @@ function animate() {
 }
 
 function render() {
-    scene.traverse(darkenNonBloomed);
+    renderer.render(scene, camera);
+    scene.traverse(nonBloomed);
     bloomComposer.render();
     scene.traverse(restoreMaterial);
     finalComposer.render();
 }
 
-function darkenNonBloomed(obj) {
+function nonBloomed(obj) {
 
     if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
 
