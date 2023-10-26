@@ -10,11 +10,18 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import { Satellite, Point } from "./satellite.js";
+import { Satellite, Point, Orbit } from "./satellite.js";
 
-let a = new Satellite('test', {
-    orbitalPeriod: 1, semiMajorAxis: 1, eccentricity: 0, inclination: 1, argumentOfPeriapsis: 1, longOfAscNode: 1
-})
+const p = {
+    orbitalPeriod: 1.1,
+    semiMajorAxis: 0.9,
+    eccentricity: 0.2,
+    inclination: 1.3,
+    argumentOfPeriapsis: 1.2,
+    longOfAscNode: 1.05
+}
+
+let a = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode))
 
 const gui = new GUI();
 
@@ -190,6 +197,11 @@ function animate() {
     requestAnimationFrame(animate);
     orbitObjects(spheres);
     rotateObjects(spheres);
+
+    a.orbit.time += 1e-6;
+
+    console.log(a.orbit);
+    console.log(a.orbit.cartesian);
 
     render();
 }
