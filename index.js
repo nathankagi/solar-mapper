@@ -10,6 +10,12 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
+import { Satellite, Point } from "./satellite.js";
+
+let a = new Satellite('test', {
+    orbitalPeriod: 1, semiMajorAxis: 1, eccentricity: 0, inclination: 1, argumentOfPeriapsis: 1, longOfAscNode: 1
+})
+
 const gui = new GUI();
 
 const BLOOM_SCENE = 1;
@@ -182,21 +188,30 @@ function getRandomRange(min, max) {
 
 function animate() {
     requestAnimationFrame(animate);
+    orbitObjects(spheres);
     rotateObjects(spheres);
 
     render();
 }
 
-function rotateObjects(objects) {
-    const rotationSpeed = 0.01;
+function orbitObjects(objects) {
+    const orbitSpeed = 0.01;
     const distanceCoefficient = 50;
     const referncePosition = new THREE.Vector3(0, 0, 0);
     objects.forEach(element => {
         const distance = element.item.children[0].position.distanceTo(referncePosition);
-        const rate = rotationSpeed * Math.exp(-distance / distanceCoefficient);
-        console.log(rate);
+        const rate = orbitSpeed * Math.exp(-distance / distanceCoefficient);
         element.group.rotation.y += rate;
     });
+}
+
+function rotateObjects(objects) {
+    const rotationSpeed = 0.01;
+    const radiusCoefficient = 5;
+    objects.forEach(element => {
+        const rate = rotationSpeed * Math.exp(-element.item.children[0].radius / radiusCoefficient);
+        element.item.children[0].y += rate;
+    })
 }
 
 function render() {
@@ -208,12 +223,9 @@ function render() {
 }
 
 function nonBloomed(obj) {
-
     if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
-
         materials[obj.uuid] = obj.material;
         obj.material = darkMaterial;
-
     }
 
 }
@@ -221,27 +233,7 @@ function nonBloomed(obj) {
 function restoreMaterial(obj) {
 
     if (materials[obj.uuid]) {
-
         obj.material = materials[obj.uuid];
         delete materials[obj.uuid];
-
-    }
-
-}
-
-class CelestialBody {
-    constructor(name, radius) {
-
-    }
-}
-
-class Orbit {
-    constructor(N, i, w, a, e, M) {
-        this.N = N; // longitude of the ascending node
-        this.i = i; // inclination to the ecliptic plane
-        this.w = w; // argument of perihelion
-        this.a = a; // semi-major axis, or mean distance from orbiting body
-        this.e = e; // eccentricity (0=circle, 0-1=ellipse, 1=parabola)
-        this.M = M; // 0 at perihelion
     }
 }
