@@ -1,7 +1,8 @@
 class Satellite {
-    constructor(name, orbit) {
+    constructor(name, orbit, mesh) {
         this.name = name;
         this.orbit = orbit;
+        this.mesh = mesh;
     }
 }
 

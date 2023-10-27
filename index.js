@@ -13,15 +13,22 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { Satellite, Point, Orbit } from "./satellite.js";
 
 const p = {
-    orbitalPeriod: 1.1,
-    semiMajorAxis: 0.9,
-    eccentricity: 0.2,
-    inclination: 1.3,
-    argumentOfPeriapsis: 1.2,
-    longOfAscNode: 1.05
+    orbitalPeriod: 200,
+    semiMajorAxis: 20,
+    eccentricity: 0,
+    inclination: 0.2,
+    argumentOfPeriapsis: 0,
+    longOfAscNode: 0
 }
 
-let a = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode))
+const aGeom = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
+const aMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const aSphere = new THREE.Mesh(aGeom, aMaterial);
+aSphere.position.set(5,5,5);
+aSphere.receiveShadow = true;
+aSphere.castShadow = true;
+
+let a = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), aSphere)
 
 const gui = new GUI();
 
@@ -68,6 +75,8 @@ const container = document.getElementById("container");
 container.innerHTML = "";
 
 const scene = new THREE.Scene();
+
+scene.add(aSphere);
 
 const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
 camera.position.set(50, 50, 50);
@@ -198,10 +207,9 @@ function animate() {
     orbitObjects(spheres);
     rotateObjects(spheres);
 
-    a.orbit.time += 1e-6;
-
-    console.log(a.orbit);
-    console.log(a.orbit.cartesian);
+    a.orbit.time += 1;
+    const pos = a.orbit.cartesian
+    a.mesh.position.set(pos.x, pos.z, pos.y);
 
     render();
 }
