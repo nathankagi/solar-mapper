@@ -10,21 +10,21 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
-import { Satellite, Point, Orbit } from "./satellite.js";
+import { Satellite, Orbit } from "./satellite.js";
 
 const p = {
     orbitalPeriod: 200,
     semiMajorAxis: 20,
     eccentricity: 0.2,
-    inclination: 0,
+    inclination: 0.2,
     argumentOfPeriapsis: 0,
     longOfAscNode: 0
 }
 
-const aGeom = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
+const aGeom = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
 const aMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 const aSphere = new THREE.Mesh(aGeom, aMaterial);
-aSphere.position.set(5,5,5);
+aSphere.position.set(5, 5, 5);
 aSphere.receiveShadow = true;
 aSphere.castShadow = true;
 
@@ -76,6 +76,13 @@ container.innerHTML = "";
 
 const scene = new THREE.Scene();
 
+const planeGeometry = new THREE.PlaneGeometry(100, 100, 1, 1);
+const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x0c0c0c, side: THREE.DoubleSide, opacity: 0.9, transparent: true });
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+plane.rotateX(Math.PI/2);
+plane.layers.disable(BLOOM_SCENE);
+scene.add(plane);
+
 scene.add(aSphere);
 
 const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
@@ -97,7 +104,7 @@ container.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
-controls.maxPolarAngle = Math.PI;
+controls.maxPolarAngle = Math.PI/2;
 controls.update();
 controls.addEventListener('change', render);
 
