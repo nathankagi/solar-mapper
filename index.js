@@ -15,8 +15,8 @@ import { Satellite, Point, Orbit } from "./satellite.js";
 const p = {
     orbitalPeriod: 200,
     semiMajorAxis: 20,
-    eccentricity: 0,
-    inclination: 0.2,
+    eccentricity: 0.2,
+    inclination: 0,
     argumentOfPeriapsis: 0,
     longOfAscNode: 0
 }

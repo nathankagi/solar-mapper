@@ -4,6 +4,14 @@ class Satellite {
         this.orbit = orbit;
         this.mesh = mesh;
     }
+
+    get position() {
+        return null;
+    }
+
+    set position(x) { 
+        return null;
+    }
 }
 
 class Orbit {
