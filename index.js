@@ -16,7 +16,7 @@ const p = {
     orbitalPeriod: 200,
     semiMajorAxis: 20,
     eccentricity: 0.2,
-    inclination: 0.2,
+    inclination: 0.0,
     argumentOfPeriapsis: 0,
     longOfAscNode: 0
 }
@@ -71,19 +71,47 @@ const materials = {};
 let fov = 70;
 let aspectRatio = window.innerWidth / window.innerHeight;
 
-const container = document.getElementById("container");
-container.innerHTML = "";
-
 const scene = new THREE.Scene();
 
 const planeGeometry = new THREE.PlaneGeometry(100, 100, 1, 1);
 const planeMaterial = new THREE.MeshBasicMaterial({ color: 0x0c0c0c, side: THREE.DoubleSide, opacity: 0.9, transparent: true });
 const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-plane.rotateX(Math.PI/2);
+plane.rotateX(Math.PI / 2);
 plane.layers.disable(BLOOM_SCENE);
 scene.add(plane);
 
 scene.add(aSphere);
+
+const axisLength = 20;
+// Create X-axis (red)
+const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(axisLength, 0, 0),
+]);
+const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
+xAxis.layers.disable(BLOOM_SCENE);
+scene.add(xAxis);
+
+// Create Y-axis (green)
+const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, axisLength, 0),
+]);
+const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
+yAxis.layers.disable(BLOOM_SCENE);
+scene.add(yAxis);
+
+// Create Z-axis (blue)
+const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, axisLength),
+]);
+const zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
+zAxis.layers.disable(BLOOM_SCENE);
+scene.add(zAxis);
 
 const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
 camera.position.set(50, 50, 50);
@@ -94,17 +122,15 @@ scene.add(ambientLight);
 
 const lightFolder = gui.addFolder('light');
 
-const canvas = document.getElementsByTagName("canvas")[0];
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 10;
 controls.maxDistance = 10000;
-controls.maxPolarAngle = Math.PI/2;
+controls.maxPolarAngle = Math.PI;
 controls.update();
 controls.addEventListener('change', render);
 
@@ -250,9 +276,13 @@ function render() {
 }
 
 function nonBloomed(obj) {
-    if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
-        materials[obj.uuid] = obj.material;
-        obj.material = darkMaterial;
+    // if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
+    if (bloomLayer.test(obj.layers) === false) {
+        try {
+            materials[obj.uuid] = obj.material;
+            obj.material = darkMaterial;
+        } catch (error) {
+        }
     }
 
 }
