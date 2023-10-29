@@ -1,5 +1,6 @@
 import "./index.css";
 import * as THREE from "three";
+import Stats from 'stats.js'
 
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
@@ -9,6 +10,10 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+const stats = new Stats()
+stats.showPanel(0)
+document.body.appendChild(stats.dom)
 
 import { Satellite, Orbit } from "./satellite.js";
 
@@ -147,8 +152,15 @@ finalComposer.addPass(renderScene);
 finalComposer.addPass(mixPass);
 finalComposer.addPass(outputPass);
 
-const satellites = generateRandomSatellites();
-createSun();
+const sun = createSun()
+scene.add(sun);
+
+const satellites = generateRandomSatellites(10);
+const moons0 = generateRandomSatelliteMoons(1, satellites[0]);
+const moons1 = generateRandomSatelliteMoons(1, satellites[1]);
+const moons3 = generateRandomSatelliteMoons(5, satellites[3]);
+const moons7 = generateRandomSatelliteMoons(10, satellites[7]);
+const moons8 = generateRandomSatelliteMoons(12, satellites[8]);
 
 window.addEventListener("resize", function () {
     const width = window.innerWidth;
@@ -178,33 +190,33 @@ function createSun() {
     scene.add(pointLight);
     lightFolder.add(pointLight, 'intensity').min(5).max(100).step(0.01);
 
-    scene.add(sphere);
+    return sphere;
 }
 
-function generateRandomSatellites() {
+function generateRandomSatellites(n: number) {
     const satellites: Satellite[] = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < n; i++) {
         const p = {
             orbitalPeriod: getRandomRange(500, 750),
             semiMajorAxis: getRandomRange(10, 300),
-            eccentricity: getRandomRange(0,0.15),
-            inclination: getRandomRange(-0.1,0.1),
+            eccentricity: getRandomRange(0, 0.3),
+            inclination: getRandomRange(-0.3, 0.3),
             argumentOfPeriapsis: 0,
             longOfAscNode: 0
         }
 
         const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
-        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
 
         let satellite = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), mesh);
-        
+
         const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
         satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);
         satellite.orbit.orbitalPeriod = satellite.orbit.orbitalPeriod / rate;
-        
+
         scene.add(satellite.mesh);
         satellites.push(satellite);
     }
@@ -212,33 +224,57 @@ function generateRandomSatellites() {
     return satellites;
 }
 
-function getRandomRange(min, max) {
+function generateRandomSatelliteMoons(n: number, parent:Satellite) {
+    const satellites: Satellite[] = [];
+    for (let i = 0; i < n; i++) {
+        const p = {
+            orbitalPeriod: getRandomRange(500, 750),
+            semiMajorAxis: getRandomRange(5, 10),
+            eccentricity: getRandomRange(0, 0.3),
+            inclination: getRandomRange(-0.3, 0.3),
+            argumentOfPeriapsis: 0,
+            longOfAscNode: 0
+        }
+
+        const geometry = new THREE.SphereGeometry(getRandomRange(0.1, 0.8), 100, 100);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+
+        let satellite = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), mesh, parent);
+
+        const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
+        satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);
+        satellite.orbit.orbitalPeriod = satellite.orbit.orbitalPeriod / rate;
+
+        scene.add(satellite.mesh);
+        satellites.push(satellite);
+    }
+
+    return satellites;
+}
+
+function getRandomRange(min: number, max: number) {
     return Math.random() * (max - min) + min;
 }
 
 function animate() {
+    stats.update();
     requestAnimationFrame(animate);
-
     updateSatellites(satellites);
-
+    updateSatellites(moons0);
+    updateSatellites(moons1);
+    updateSatellites(moons3);
+    updateSatellites(moons7);
+    updateSatellites(moons8);
     render();
 }
 
 function updateSatellites(objects: Satellite[]) {
     objects.forEach(element => {
-        element.update();
+        element.update(scene);
     })
-}
-
-function orbitObjects(objects) {
-    const orbitSpeed = 0.01;
-    const distanceCoefficient = 50;
-    const referncePosition = new THREE.Vector3(0, 0, 0);
-    objects.forEach(element => {
-        const distance = element.item.children[0].position.distanceTo(referncePosition);
-        const rate = orbitSpeed * Math.exp(-distance / distanceCoefficient);
-        element.group.rotation.y += rate;
-    });
 }
 
 function render() {
@@ -286,6 +322,6 @@ window.addEventListener('click', (event) => {
         const points = [camera.position.clone(), intersectionPoint];
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         let line = new THREE.Line(geometry, material);
-        scene.add(line);
+        // scene.add(line);
     }
 });

@@ -4,20 +4,50 @@ class Satellite {
     name: string;
     orbit: Orbit;
     mesh: THREE.Mesh;
+    tail: boolean;
+    orbitLine: boolean;
+    tailPoints: THREE.Vector3[];
+    tailObject: THREE.Line;
+    orbitalParent: Satellite | null;
 
-    constructor(name: string, orbit: Orbit, mesh: THREE.Mesh) {
+    constructor(name: string, orbit: Orbit, mesh: THREE.Mesh, orbitalParent: Satellite | null = null) {
         this.name = name;
         this.orbit = orbit;
         this.mesh = mesh;
+        this.tail = true;
+        this.orbitLine = true;
+        this.orbitalParent = orbitalParent;
+
+        this.tailPoints = [];
+
+        const tailGeometry = new THREE.BufferGeometry().setFromPoints(this.tailPoints);
+        const tailMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+        this.tailObject = new THREE.Line(tailGeometry, tailMaterial);
     }
 
     get position() {
         return this.orbit.cartesian;
     }
 
-    update() {
+    update(scene: THREE.Scene) {
         this.orbit.time += 1;
+        if (this.orbitalParent != null){
+            this.orbit.barycenter = this.orbitalParent.position;
+        }
         this.mesh.position.copy(this.orbit.cartesian);
+
+        if (this.tail) {
+            this.tailPoints.push(this.orbit.cartesian);
+            this.tailPoints = this.tailPoints.slice(-200);
+
+            if (scene) {
+                scene.remove(this.tailObject);
+                const tailGeometry = new THREE.BufferGeometry().setFromPoints(this.tailPoints);
+                const tailMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+                this.tailObject = new THREE.Line(tailGeometry, tailMaterial);
+                scene.add(this.tailObject);
+            }
+        }
     }
 }
 
@@ -29,14 +59,16 @@ class Orbit {
     argumentOfPeriapsis: number;
     longOfAscNode: number;
     t: number;
+    barycenter: THREE.Vector3
 
-    constructor(orbitalPeriod: number, semiMajorAxis: number, eccentricity: number, inclination: number, argumentOfPeriapsis: number, longOfAscNode: number) {
+    constructor(orbitalPeriod: number, semiMajorAxis: number, eccentricity: number, inclination: number, argumentOfPeriapsis: number, longOfAscNode: number, barycenter: THREE.Vector3 = new THREE.Vector3(0, 0, 0)) {
         this.orbitalPeriod = orbitalPeriod;
         this.semiMajorAxis = semiMajorAxis;
         this.eccentricity = eccentricity;
         this.inclination = inclination;
         this.argumentOfPeriapsis = argumentOfPeriapsis;
         this.longOfAscNode = longOfAscNode;
+        this.barycenter = barycenter;
 
         this.time = 0;
     }
@@ -85,7 +117,8 @@ class Orbit {
         let x = r * (Math.cos(this.longOfAscNode) * Math.cos(trueArg) - Math.sin(this.longOfAscNode) * Math.sin(trueArg) * Math.cos(this.inclination));
         let z = r * (Math.sin(this.longOfAscNode) * Math.cos(trueArg) - Math.cos(this.longOfAscNode) * Math.sin(trueArg) * Math.cos(this.inclination));
         let y = r * Math.sin(trueArg) * Math.sin(this.inclination);
-        return new THREE.Vector3(x, y, z);
+
+        return this.barycenter.clone().add(new THREE.Vector3(x, y, z));
     }
 
     cartesianAt(t: number) {
