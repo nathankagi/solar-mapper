@@ -1,21 +1,36 @@
+import * as THREE from "three";
+
 class Satellite {
-    constructor(name, orbit, mesh) {
+    name: string;
+    orbit: Orbit;
+    mesh: THREE.Mesh;
+
+    constructor(name: string, orbit: Orbit, mesh: THREE.Mesh) {
         this.name = name;
         this.orbit = orbit;
         this.mesh = mesh;
     }
 
     get position() {
-        return null;
+        return this.orbit.cartesian;
     }
 
-    set position(x) { 
-        return null;
+    update() {
+        this.orbit.time += 1;
+        this.mesh.position.copy(this.orbit.cartesian);
     }
 }
 
 class Orbit {
-    constructor(orbitalPeriod, semiMajorAxis, eccentricity, inclination, argumentOfPeriapsis, longOfAscNode) {
+    orbitalPeriod: number;
+    semiMajorAxis: number;
+    eccentricity: number;
+    inclination: number;
+    argumentOfPeriapsis: number;
+    longOfAscNode: number;
+    t: number;
+
+    constructor(orbitalPeriod: number, semiMajorAxis: number, eccentricity: number, inclination: number, argumentOfPeriapsis: number, longOfAscNode: number) {
         this.orbitalPeriod = orbitalPeriod;
         this.semiMajorAxis = semiMajorAxis;
         this.eccentricity = eccentricity;
@@ -42,15 +57,15 @@ class Orbit {
         return this.t;
     }
 
-    set time(value) {
-        this.t = value;
+    set time(value: number) {
+        this.t = value % this.orbitalPeriod;
     }
 
     get eccentricAnomaly() {
         return this.solveKepplersEquation(this.meanAnomaly, this.eccentricity);
     }
 
-    solveKepplersEquation(meanAnomaly, eccentricity, epsilon = 1e-3) {
+    solveKepplersEquation(meanAnomaly: number, eccentricity: number, epsilon = 1e-3) {
         let E0 = meanAnomaly;
         let E = E0;
         for (let i = 0; i < 1000; i++) {
@@ -68,25 +83,16 @@ class Orbit {
 
         let r = this.distanceToBaryCentre;
         let x = r * (Math.cos(this.longOfAscNode) * Math.cos(trueArg) - Math.sin(this.longOfAscNode) * Math.sin(trueArg) * Math.cos(this.inclination));
-        let y = r * (Math.sin(this.longOfAscNode) * Math.cos(trueArg) - Math.cos(this.longOfAscNode) * Math.sin(trueArg) * Math.cos(this.inclination));
-        let z = r * Math.sin(trueArg) * Math.sin(this.inclination);
-        return new Point(x, y, z);
+        let z = r * (Math.sin(this.longOfAscNode) * Math.cos(trueArg) - Math.cos(this.longOfAscNode) * Math.sin(trueArg) * Math.cos(this.inclination));
+        let y = r * Math.sin(trueArg) * Math.sin(this.inclination);
+        return new THREE.Vector3(x, y, z);
     }
 
-    cartesianAt(t) {
+    cartesianAt(t: number) {
         this.time = t;
         return this.cartesian;
     }
 }
 
-class Point {
-    constructor(x, y, z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-}
-
 export { Satellite };
 export { Orbit };
-export { Point };

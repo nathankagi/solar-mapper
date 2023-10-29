@@ -12,24 +12,6 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import { Satellite, Orbit } from "./satellite.js";
 
-const p = {
-    orbitalPeriod: 200,
-    semiMajorAxis: 20,
-    eccentricity: 0.2,
-    inclination: 0.0,
-    argumentOfPeriapsis: 0,
-    longOfAscNode: 0
-}
-
-const aGeom = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
-const aMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-const aSphere = new THREE.Mesh(aGeom, aMaterial);
-aSphere.position.set(5, 5, 5);
-aSphere.receiveShadow = true;
-aSphere.castShadow = true;
-
-let a = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), aSphere)
-
 const gui = new GUI();
 
 const BLOOM_SCENE = 1;
@@ -80,10 +62,9 @@ plane.rotateX(Math.PI / 2);
 plane.layers.disable(BLOOM_SCENE);
 scene.add(plane);
 
-scene.add(aSphere);
-
 const axisLength = 20;
-// Create X-axis (red)
+
+// create X-axis (red)
 const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, 0, 0),
@@ -93,7 +74,7 @@ const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
 xAxis.layers.disable(BLOOM_SCENE);
 scene.add(xAxis);
 
-// Create Y-axis (green)
+// create Y-axis (green)
 const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
 const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, 0, 0),
@@ -103,7 +84,7 @@ const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
 yAxis.layers.disable(BLOOM_SCENE);
 scene.add(yAxis);
 
-// Create Z-axis (blue)
+// create Z-axis (blue)
 const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
 const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, 0, 0),
@@ -166,7 +147,7 @@ finalComposer.addPass(renderScene);
 finalComposer.addPass(mixPass);
 finalComposer.addPass(outputPass);
 
-const spheres = generateRandomSpheres();
+const satellites = generateRandomSatellites();
 createSun();
 
 window.addEventListener("resize", function () {
@@ -200,35 +181,35 @@ function createSun() {
     scene.add(sphere);
 }
 
-function generateRandomSpheres() {
-    const spheres = [];
+function generateRandomSatellites() {
+    const satellites: Satellite[] = [];
     for (let i = 0; i < 10; i++) {
-        const sphereGroup = new THREE.Group();
-        const pivotPoint = new THREE.Object3D();
-        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 5), 100, 100);
-        const material = new THREE.MeshStandardMaterial({ color: 0x000fff });
-        const sphere = new THREE.Mesh(geometry, material);
-        sphere.receiveShadow = true;
-        sphere.castShadow = true;
-        scene.add(sphere);
+        const p = {
+            orbitalPeriod: getRandomRange(500, 750),
+            semiMajorAxis: getRandomRange(10, 300),
+            eccentricity: getRandomRange(0,0.15),
+            inclination: getRandomRange(-0.1,0.1),
+            argumentOfPeriapsis: 0,
+            longOfAscNode: 0
+        }
 
-        let offest_maximum = 80
-        sphere.position.x = getRandomRange(-offest_maximum, offest_maximum);
-        sphere.position.y = getRandomRange(-offest_maximum, offest_maximum);
-        sphere.position.z = getRandomRange(-offest_maximum, offest_maximum);
-        sphere.layers.disable(BLOOM_SCENE);
+        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
 
-        pivotPoint.position.set(0, 0, 0);
-        spheres.push(
-            {
-                'group': sphereGroup.add(pivotPoint),
-                'item': pivotPoint.add(sphere),
-            }
-        )
-        scene.add(sphereGroup);
+        let satellite = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), mesh);
+        
+        const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
+        satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);
+        satellite.orbit.orbitalPeriod = satellite.orbit.orbitalPeriod / rate;
+        
+        scene.add(satellite.mesh);
+        satellites.push(satellite);
     }
 
-    return spheres;
+    return satellites;
 }
 
 function getRandomRange(min, max) {
@@ -237,14 +218,16 @@ function getRandomRange(min, max) {
 
 function animate() {
     requestAnimationFrame(animate);
-    orbitObjects(spheres);
-    rotateObjects(spheres);
 
-    a.orbit.time += 1;
-    const pos = a.orbit.cartesian
-    a.mesh.position.set(pos.x, pos.z, pos.y);
+    updateSatellites(satellites);
 
     render();
+}
+
+function updateSatellites(objects: Satellite[]) {
+    objects.forEach(element => {
+        element.update();
+    })
 }
 
 function orbitObjects(objects) {
@@ -256,15 +239,6 @@ function orbitObjects(objects) {
         const rate = orbitSpeed * Math.exp(-distance / distanceCoefficient);
         element.group.rotation.y += rate;
     });
-}
-
-function rotateObjects(objects) {
-    const rotationSpeed = 0.01;
-    const radiusCoefficient = 5;
-    objects.forEach(element => {
-        const rate = rotationSpeed * Math.exp(-element.item.children[0].radius / radiusCoefficient);
-        element.item.children[0].y += rate;
-    })
 }
 
 function render() {
@@ -294,3 +268,24 @@ function restoreMaterial(obj) {
         delete materials[obj.uuid];
     }
 }
+
+window.addEventListener('click', (event) => {
+    const canvasBounds = renderer.domElement.getBoundingClientRect();
+    const x = ((event.clientX - canvasBounds.left) / renderer.domElement.clientWidth) * 2 - 1;
+    const y = -((event.clientY - canvasBounds.top) / renderer.domElement.clientHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+
+    const intersects = raycaster.intersectObjects(scene.children, false);
+    if (intersects.length > 0) {
+        const intersectionPoint = intersects[0].point;
+        const object = intersects[0].object;
+
+        const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+        const points = [camera.position.clone(), intersectionPoint];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        let line = new THREE.Line(geometry, material);
+        scene.add(line);
+    }
+});
