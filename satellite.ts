@@ -9,13 +9,15 @@ class Satellite {
     tailPoints: THREE.Vector3[];
     tailObject: THREE.Line;
     orbitalParent: Satellite | null;
+    maxTailPoints: number;
 
     constructor(name: string, orbit: Orbit, mesh: THREE.Mesh, orbitalParent: Satellite | null = null) {
         this.name = name;
         this.orbit = orbit;
         this.mesh = mesh;
-        this.tail = true;
-        this.orbitLine = true;
+        this.tail = false;
+        this.orbitLine = false;
+        this.maxTailPoints = 1000;
         this.orbitalParent = orbitalParent;
 
         this.tailPoints = [];
@@ -38,7 +40,7 @@ class Satellite {
 
         if (this.tail) {
             this.tailPoints.push(this.orbit.cartesian);
-            this.tailPoints = this.tailPoints.slice(-200);
+            this.tailPoints = this.tailPoints.slice(-this.maxTailPoints);
 
             if (scene) {
                 scene.remove(this.tailObject);
