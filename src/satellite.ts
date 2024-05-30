@@ -1,9 +1,10 @@
 import * as THREE from "three";
 
+
 class Satellite {
     name: string;
     orbit: Orbit;
-    mesh: THREE.Mesh;
+    mesh: THREE.Mesh | null;
     tail: boolean;
     orbitLine: boolean;
     tailPoints: THREE.Vector3[];
@@ -11,7 +12,7 @@ class Satellite {
     orbitalParent: Satellite | null;
     maxTailPoints: number;
 
-    constructor(name: string, orbit: Orbit, mesh: THREE.Mesh, orbitalParent: Satellite | null = null) {
+    constructor(name: string, orbit: Orbit, mesh: THREE.Mesh, orbitalParent: Satellite | null = null, orbitalChildren: Satellite[]) {
         this.name = name;
         this.orbit = orbit;
         this.mesh = mesh;
@@ -33,7 +34,7 @@ class Satellite {
 
     update(scene: THREE.Scene) {
         this.orbit.time += 1;
-        if (this.orbitalParent != null){
+        if (this.orbitalParent != null) {
             this.orbit.barycenter = this.orbitalParent.position;
         }
         this.mesh.position.copy(this.orbit.cartesian);
