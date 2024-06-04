@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import Stats from "stats.js";
 
-import { GUI } from "three/addons/libs/lil-ui.module.min.js";
+import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+
 
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -9,8 +10,6 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
-
-import { Orbit, Satellite } from "./satellite";
 
 export const BLOOM_SCENE = 1;
 const DEFAULT_BLOOM_PARAMS = {
@@ -31,6 +30,8 @@ export class Scene {
     bloomComposer: EffectComposer;
     finalComposer: EffectComposer;
     camera: THREE.PerspectiveCamera;
+
+    lightFolder: any;
 
 
     constructor(
@@ -77,28 +78,27 @@ export class Scene {
 
         this.scene = new THREE.Scene();
 
-        const camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
-        camera.position.set(50, 50, 50);
-        camera.lookAt(0, 0, 0);
+        this.camera = new THREE.PerspectiveCamera(fov, aspectRatio, 1, 1000);
+        this.camera.position.set(50, 50, 50);
+        this.camera.lookAt(0, 0, 0);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
         this.scene.add(ambientLight);
-
-        const lightFolder = ui.addFolder("light");
+        this.lightFolder = ui.addFolder("light");
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
-        const controls = new OrbitControls(camera, this.renderer.domElement);
+        const controls = new OrbitControls(this.camera, this.renderer.domElement);
         controls.minDistance = 10;
         controls.maxDistance = 10000;
         controls.maxPolarAngle = Math.PI;
         controls.update();
         controls.addEventListener("change", this.render);
 
-        const renderScene = new RenderPass(this.scene, camera);
+        const renderScene = new RenderPass(this.scene, this.camera);
 
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -135,79 +135,78 @@ export class Scene {
         this.finalComposer.addPass(renderScene);
         this.finalComposer.addPass(mixPass);
         this.finalComposer.addPass(outputPass);
-
-        this.animate();
-
-        // Event listeners
-        window.addEventListener("resize", function () {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(width, height);
-            bloomComposer.setSize(width, height);
-            finalComposer.setSize(width, height);
-        });
-
-        window.addEventListener("click", (event) => {
-            const canvasBounds = renderer.domElement.getBoundingClientRect();
-            const x =
-                ((event.clientX - canvasBounds.left) / renderer.domElement.clientWidth) *
-                2 -
-                1;
-            const y =
-                -((event.clientY - canvasBounds.top) / renderer.domElement.clientHeight) *
-                2 +
-                1;
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, false);
-            if (intersects.length > 0) {
-                const intersectionPoint = intersects[0].point;
-                const object = intersects[0].object;
-
-                const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-                const points = [camera.position.clone(), intersectionPoint];
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                let line = new THREE.Line(geometry, material);
-                // scene.add(line);
-            }
-        });
     }
 
-    animate() {
-        requestAnimationFrame(this.animate);
-        // this.update_handler();
-        this.render();
+    onWindowResize(width: number, height: number) {
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(width, height);
+        this.bloomComposer.setSize(width, height);
+        this.finalComposer.setSize(width, height);
     }
 
-    render() {
-        this.stats.update();
-        this.renderer.render(this.scene, this.camera);
-        this.scene.traverse(this.nonBloomed);
-        this.bloomComposer.render();
-        this.scene.traverse(this.restoreMaterial);
-        this.finalComposer.render();
+    onWindowClick(x: number, y: number) {
+        const canvasBounds = this.renderer.domElement.getBoundingClientRect();
+        const canvasX =
+            ((x - canvasBounds.left) / this.renderer.domElement.clientWidth) *
+            2 -
+            1;
+        const canvasY =
+            -((y - canvasBounds.top) / this.renderer.domElement.clientHeight) *
+            2 +
+            1;
+
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(canvasX, canvasY), this.camera);
+
+        const intersects = raycaster.intersectObjects(this.scene.children, false);
+        if (intersects.length > 0) {
+            const intersectionPoint = intersects[0].point;
+            const object = intersects[0].object;
+
+            const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+            const points = [this.camera.position.clone(), intersectionPoint];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            let line = new THREE.Line(geometry, material);
+            // scene.add(line);
+        }
     }
 
-    nonBloomed(obj) {
+}
+
+export function simulate(callback: CallableFunction, scene: Scene) {
+    function animate() {
+        requestAnimationFrame(animate);
+        callback();
+        render(scene);
+    }
+
+    function render(s) {
+        s.stats.update();
+        s.renderer.render(s.scene, s.camera);
+        s.scene.traverse(nonBloomed);
+        s.bloomComposer.render();
+        s.scene.traverse(restoreMaterial);
+        s.finalComposer.render();
+    }
+
+    function nonBloomed(obj) {
         // if (obj.isMesh && bloomLayer.test(obj.layers) === false) {
-        if (this.bloomLayer.test(obj.layers) === false) {
+        if (scene.bloomLayer.test(obj.layers) === false) {
             try {
-                this.materials[obj.uuid] = obj.material;
-                obj.material = this.darkMaterial;
+                scene.materials[obj.uuid] = obj.material;
+                obj.material = scene.darkMaterial;
             } catch (error) { }
         }
     }
 
-    restoreMaterial(obj) {
-        if (this.materials[obj.uuid]) {
-            obj.material = this.materials[obj.uuid];
-            delete this.materials[obj.uuid];
+    function restoreMaterial(obj) {
+        if (scene.materials[obj.uuid]) {
+            obj.material = scene.materials[obj.uuid];
+            delete scene.materials[obj.uuid];
         }
     }
+
+    animate();
 }

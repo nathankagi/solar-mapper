@@ -1,40 +1,74 @@
 import * as THREE from "three";
 import { Satellite, Orbit } from "./satellite";
 
-import { BLOOM_SCENE } from "./scene";
+import { Scene, BLOOM_SCENE } from "./scene";
+
+/*
+CONFIG
+size distribution -> mean, std_dev or array
+moon distribution -> mean, std_dev or array
+cluster distribution -> mean, std_dev or array
+eccentric orbit objects
+*/
 
 export class System {
-    children: Satellite[]
+    children: Satellite[];
+    scene: Scene;
 
-    constructor() {
-        // create stars
+    constructor(scene: Scene) {
+        console.log("creating system");
+        this.scene = scene;
+        this.children = [];
+        // need to define configuration settings for system generation
         let gen = Math.random();
 
-        // need to redo the distribution
-        if (gen < 0.5) {
-        }
-        else if (gen >= 0.5 && gen < 0.9) {
+        // create stars
+        const geometry = new THREE.SphereGeometry(1, 100, 100);
+        const material = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.receiveShadow = true;
+        sphere.castShadow = true;
+        sphere.position.set(0, 0, 0);
+        sphere.layers.enable(BLOOM_SCENE);
 
-        }
-        else {
+        const pointLight = new THREE.PointLight(0xffffff, 15, 0, 0.01);
+        pointLight.position.set(0, 0, 0);
+        this.scene.scene.add(pointLight);
+        this.scene.lightFolder
+            .add(pointLight, "intensity")
+            .min(5)
+            .max(100)
+            .step(0.01);
 
-        }
+        this.scene.scene.add(sphere);
 
         // create planets
+        for (let i = 0; i < 10; i++) {
+            let parent = createRandomSatellite();
+
+            this.children.push(parent);
+            this.scene.scene.add(parent.mesh);
+
+            let moons = getRandomRange(0, 10);
+            for (let j = 0; j < moons; j++) {
+                let moon = createRandomSatellite(parent)
+                this.children.push(moon);
+                this.scene.scene.add(moon.mesh);
+            }
+        }
 
         // create asteroid clusters
 
         // create comets
 
         // create outer-system objects
+
+
+        console.log("finished creating system");
     }
 
     get elements() {
         return this.children;
-    }
-
-    update() {
-
     }
 }
 
@@ -44,60 +78,41 @@ export function createSattelite(config: object) {
     return elements;
 }
 
+function createRandomSatellite(parent: Satellite | null = null) {
+    const p = {
+        orbitalPeriod: getRandomRange(500, 750),
+        semiMajorAxis: getRandomRange(10, 300),
+        eccentricity: getRandomRange(0, 0.3),
+        inclination: getRandomRange(-0.3, 0.3),
+        argumentOfPeriapsis: 0,
+        longOfAscNode: 0,
+    };
 
-const sun = createSun()
-const satellites = generateRandomSatellites(10);
-const moons0 = generateRandomSatelliteMoons(1, satellites[0]);
-const moons1 = generateRandomSatelliteMoons(1, satellites[1]);
-const moons3 = generateRandomSatelliteMoons(5, satellites[3]);
-const moons7 = generateRandomSatelliteMoons(10, satellites[7]);
-const moons8 = generateRandomSatelliteMoons(12, satellites[8]);
+    const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
+    const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    mesh.castShadow = true;
 
-function createSun() {
-    const geometry = new THREE.SphereGeometry(1, 100, 100);
-    const material = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.receiveShadow = true;
-    sphere.castShadow = true;
-    sphere.position.set(0, 0, 0);
-    sphere.layers.enable(BLOOM_SCENE);
+    let satellite = new Satellite(
+        "test",
+        new Orbit(
+            p.orbitalPeriod,
+            p.semiMajorAxis,
+            p.eccentricity,
+            p.inclination,
+            p.argumentOfPeriapsis,
+            p.longOfAscNode
+        ),
+        mesh,
+        parent
+    );
 
-    const pointLight = new THREE.PointLight(0xffffff, 15, 0, 0.01);
-    pointLight.position.set(0, 0, 0);
-    scene.add(pointLight);
-    lightFolder.add(pointLight, `${this.name} intensity`).min(5).max(100).step(0.01);
+    const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
+    satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);
+    satellite.orbit.orbitalPeriod = satellite.orbit.orbitalPeriod / rate;
 
-    return sphere;
-}
-
-function generateRandomSatellites(n: number) {
-    const satellites: Satellite[] = [];
-    for (let i = 0; i < n; i++) {
-        const p = {
-            orbitalPeriod: getRandomRange(500, 750),
-            semiMajorAxis: getRandomRange(10, 300),
-            eccentricity: getRandomRange(0, 0.3),
-            inclination: getRandomRange(-0.3, 0.3),
-            argumentOfPeriapsis: 0,
-            longOfAscNode: 0
-        }
-
-        const geometry = new THREE.SphereGeometry(getRandomRange(0.5, 3), 100, 100);
-        const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
-
-        let satellite = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), mesh);
-
-        const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
-        satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);
-        satellite.orbit.orbitalPeriod = satellite.orbit.orbitalPeriod / rate;
-
-        satellites.push(satellite);
-    }
-
-    return satellites;
+    return satellite;
 }
 
 function generateRandomSatelliteMoons(n: number, parent: Satellite) {
@@ -109,16 +124,32 @@ function generateRandomSatelliteMoons(n: number, parent: Satellite) {
             eccentricity: getRandomRange(0, 0.3),
             inclination: getRandomRange(-0.3, 0.3),
             argumentOfPeriapsis: 0,
-            longOfAscNode: 0
-        }
+            longOfAscNode: 0,
+        };
 
-        const geometry = new THREE.SphereGeometry(getRandomRange(0.1, 0.8), 100, 100);
+        const geometry = new THREE.SphereGeometry(
+            getRandomRange(0.1, 0.8),
+            100,
+            100
+        );
         const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
 
-        let satellite = new Satellite('test', new Orbit(p.orbitalPeriod, p.semiMajorAxis, p.eccentricity, p.inclination, p.argumentOfPeriapsis, p.longOfAscNode), mesh, parent);
+        let satellite = new Satellite(
+            "test",
+            new Orbit(
+                p.orbitalPeriod,
+                p.semiMajorAxis,
+                p.eccentricity,
+                p.inclination,
+                p.argumentOfPeriapsis,
+                p.longOfAscNode
+            ),
+            mesh,
+            parent
+        );
 
         const rate = Math.exp(-satellite.orbit.distanceToBaryCentre / 100);
         satellite.orbit.time = getRandomRange(0, satellite.orbit.orbitalPeriod);

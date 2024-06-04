@@ -4,14 +4,14 @@ export class Satellite {
     name: string;
     orbit: Orbit;
     mesh: THREE.Mesh | null;
+    orbitalParent: Satellite | null;
+    scene: THREE.Scene;
+
     tail: boolean;
     orbitLine: boolean;
     tailPoints: THREE.Vector3[];
     tailObject: THREE.Line;
-    orbitalParent: Satellite | null;
     maxTailPoints: number;
-    orbitalChildren: Satellite[];
-    scene: THREE.Scene;
 
     constructor(
         name: string,
@@ -46,15 +46,13 @@ export class Satellite {
         return this.orbit.cartesian;
     }
 
-    update(scene: THREE.Scene, delta_t: number = 1) {
+    update(delta_t: number = 1) {
         this.orbit.time += delta_t;
 
         if (this.orbitalParent != null) {
             this.orbit.barycenter = this.orbitalParent.position;
         }
         this.mesh.position.copy(this.orbit.cartesian);
-
-        // update children
     }
 }
 
